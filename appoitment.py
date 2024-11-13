@@ -323,12 +323,12 @@ def check_and_book(json_data, page, auth):
                     # 调用假设已经封装好的app函数进行预约，传入对应id（这里假设每个预约信息里有'id'字段）
                     stat, msg, page = send_ap(item["id"], page, auth)
                     if stat:
-                        logger.info(f"成功预约 {date_start} 的时段，预约ID为 {item['id']}, 返回信息: {msg}")
+                        logger.info(f"成功预约 {date_start} 的时段，预约ID为 {item['id']}, {num_apply}/{num_max}, 返回信息: {msg}")
                         return True
                     else:
-                        logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）失败: {msg}")
+                        logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）, {num_apply}/{num_max}失败: {msg}")
                 except Exception as e:
-                    logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）时出错: {str(e)}")
+                    logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）, {num_apply}/{num_max}时出错: {str(e)}")
             else:
                 logger.info(f"{date_start} 的时段已满，无法预约，预约ID为 {item['id']}, 返回信息: 未发请求, {num_apply}/{num_max}")
     except json.JSONDecodeError as e:
