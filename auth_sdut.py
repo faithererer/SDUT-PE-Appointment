@@ -138,7 +138,8 @@ def deal_notice(page):
     # print(notices)
     # for notice in notices['result']['result']:
     #     logger.info(notice)
-    notices_ele = page.eles('xpath://*[@id="app"]/div[@class="announcement"]/div[@class="main"]/div/div/*')
-    for ele in notices_ele:
-        notice = ele.click()
-        page.back()
+    # notices_ele = page.eles('xpath://*[@id="app"]/div[@class="announcement"]/div[@class="main"]/div/div/*')
+    # for ele in notices_ele:
+    #     notice = ele.click()
+    #     page.back()
+    pass
