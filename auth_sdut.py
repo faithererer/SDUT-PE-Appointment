@@ -76,7 +76,6 @@ def auth_sdut():
         if have_login(page):
             logger.info("登录成功,当前登录态")
             return 2, page
-            break
         # 是否在登录页
         if check_login_page(page):
             logger.info("当前在登录页")
@@ -96,7 +95,6 @@ def auth_sdut():
     return True, page
 
 
-
 def logout(page):
     print(page.cookies)
     page.cookies.clear()
@@ -105,8 +103,10 @@ def logout(page):
 
 def check_login_page(page):
     try:
+        page.wait.doc_loaded()
         # 尝试获取特定的输入框元素
-        input_element = page.ele('css:input.van-field__control[placeholder="学生为学号,教师为工号"]')
+        input_element = page.ele('css:input.van-field__control[placeholder="学生为学号,教师为工号"]',
+                                 timeout=0.5)
         if input_element:
             logger.info("找到了学生为学号,教师为工号的输入框，确认已在登录页。")
             return True
@@ -118,11 +118,11 @@ def check_login_page(page):
 
 def have_login(page):
     # 检查通知情况
-    msg = page.ele('css:button.van-button.van-button--default.van-button--large.van-dialog__confirm')
-    if msg:
-        time.sleep(1)
-        msg.click()
-        return True
+    # msg = page.ele('css:button.van-button.van-button--default.van-button--large.van-dialog__confirm', time)
+    # if msg:
+    #     time.sleep(1)
+    #     msg.click()
+    #     return True
     sp_ele = page.ele(
         'css:#app > div:nth-child(1) > div.van-hairline--top-bottom.van-tabbar.van-tabbar--fixed > div.van-tabbar-item.van-tabbar-item--active > div.van-tabbar-item__text')
     if sp_ele not in [None, ''] and sp_ele.text == '首页':

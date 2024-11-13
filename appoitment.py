@@ -4,6 +4,7 @@ import threading
 import time
 
 from DrissionPage._functions.keys import Keys
+from DrissionPage.errors import ContextLostError
 
 import CONSTRANTS
 from Chrome import Chrome
@@ -206,31 +207,35 @@ def is_full_enrollment(enrollment_str):
 
 
 def inner_ap_dev(page):
-    logger.warning("进行室内预约...")
-    page.get(CONSTRANTS.INNER_URL)
-    address_bar_js = f"window.location.href = '{CONSTRANTS.INNER_URL}';"
-    page.run_js(address_bar_js)
-    # page.refresh()
-    # page.wait(1)
-    # 获得日期条目
-    date_items = page.eles('css:#app > div.page > div:nth-child(3) > div.scrollBox > *')
-    for date_item in date_items:
-        div_element = date_item.ele('xpath:./*[1][self::div]')
-        if div_element:
-            logger.warning("当前日期\t%s", div_element.text)
-        else:
-            logger.error("当前日期\t未找到对应的div元素")
+    try:
+        logger.warning("进行室内预约...")
+        page.get(CONSTRANTS.INNER_URL)
+        address_bar_js = f"window.location.href = '{CONSTRANTS.INNER_URL}';"
+        page.run_js(address_bar_js)
+        # page.refresh()
+        # page.wait(1)
+        # 获得日期条目
+        date_items = page.eles('css:#app > div.page > div:nth-child(3) > div.scrollBox > *')
+        for date_item in date_items:
+            div_element = date_item.ele('xpath:./*[1][self::div]')
+            if div_element:
+                logger.warning("当前日期\t%s", div_element.text)
+            else:
+                logger.error("当前日期\t未找到对应的div元素")
 
-        date_item.click(by_js=True)
-        time.sleep(1)
-        page.wait.eles_loaded('css:#app > div.page > div:nth-child(3) > div:nth-child(2) > div > *')
-        time_periods = page.eles('css:#app > div.page > div:nth-child(3) > div:nth-child(2) > div > *')
-        for time_period in time_periods:
-            page.listen.start(CONSTRANTS.AP_LIST)
-            time_period.click(by_js=True)
-            list = page.listen.wait()
-            auth = list.request.headers['Authorization']
-            check_and_book(list.response.body, page, auth)
+            date_item.click(by_js=True)
+            time.sleep(1)
+            page.wait.eles_loaded('css:#app > div.page > div:nth-child(3) > div:nth-child(2) > div > *')
+            time_periods = page.eles('css:#app > div.page > div:nth-child(3) > div:nth-child(2) > div > *')
+            for time_period in time_periods:
+                page.listen.start(CONSTRANTS.AP_LIST)
+                time_period.click(by_js=True)
+                list = page.listen.wait()
+                auth = list.request.headers['Authorization']
+                check_and_book(list.response.body, page, auth)
+    except ContextLostError as e:
+        logger.error(f"上下文丢失: {str(e)}")
+        return False
     return False
 
 def outer_ap_dev(page):
@@ -238,7 +243,7 @@ def outer_ap_dev(page):
     page.get(CONSTRANTS.OUTER_URL)
     address_bar_js = f"window.location.href = '{CONSTRANTS.OUTER_URL}';"
     page.run_js(address_bar_js)
-    # page.refresh()
+    page.refresh()
     # page.wait(1)
     # 获得日期条目
     date_items = page.eles('css:#app > div.page > div:nth-child(3) > div.scrollBox > *')
@@ -264,11 +269,14 @@ def send_ap(id, page, authorization):
     try:
         page.change_mode(mode='s')
         res = page.post(CONSTRANTS.AP_APPLY,
-                        data={'appointmentId': [id]},
+                        json={'appointmentId': [int(id)]},
                         headers={
                             'Authorization': authorization,
-                            'Content-Type': 'application/json;charset=UTF-8'
-                        })
+                            "content_type": "application/json",
+                            "origin": "http://10-17-27-11.newvpn.sdut.edu.cn:8118",
+                            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+                        },
+                        allow_redirects=False)
         if res is None:
             return False, "请求失败", page
         if res.status_code != 200:
@@ -277,7 +285,7 @@ def send_ap(id, page, authorization):
         logger.error(f"预约时出错: {str(e)}")
         return False, str(e), page
     finally:
-        page.change_mode(mode='d')
+        page.change_mode(mode='d', go=False)
     r = json.loads(res.text)
     if r["status"] != 1:
         return False, res.text, page
