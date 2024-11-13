@@ -1,19 +1,25 @@
+import concurrent
 import os
 import random
 import time
 import sys
 from DrissionPage import ChromiumPage
+from DrissionPage import Chromium
+from DrissionPage._configs.chromium_options import ChromiumOptions
+from DrissionPage._pages.session_page import SessionPage
+
+from Chrome import Chrome
 from config_reader import load_config
 import CONSTRANTS
 import my_logger
 
-logger = my_logger.get_logger()
+logger = my_logger.MYLogger().logger
 
 
 def auth_sdut():
     i = 1
     try:
-        page = ChromiumPage()
+        page = Chrome().get_browser().latest_tab
     except Exception as e:
         logger.error(f"初始化浏览器或打开登录页面出错: {e}")
         return False, None
@@ -51,7 +57,7 @@ def auth_sdut():
             username_ipt.clear()
             username_ipt.input(username)
             # 400-600ms
-            time.sleep(random.randint(1, 2))
+            time.sleep(random.randint(2, 3))
             password_ipt.clear()
             password_ipt.input(password)
         except Exception as e:
@@ -65,63 +71,30 @@ def auth_sdut():
         except Exception as e:
             logger.error(f"找不到或无法点击登录按钮: {e}")
             continue
+        logger.info("认证结果")
+        # 是否登录
+        if have_login(page):
+            logger.info("登录成功,当前登录态")
+            return 2, page
+            break
+        # 是否在登录页
+        if check_login_page(page):
+            logger.info("当前在登录页")
+            return 1, page
 
-        logger.info("结果")
         try:
             info = page.ele('xpath://*[@id="app"]/div[1]/div/div/div/div[2]/div[2]/div')
-            print(info.text)
+            if info:
+                logger.warning(f"页面提示\t{info.text}")
         except Exception as e:
-            logger.error(e)
+            logger.error("认证结果出现了没有预期的结果", e)
             continue
-
-        j = 1
-        while True:
-            logger.warning(f"页面提示\t{info.text}")
-            logger.info(f"关于并发上限问题第{j}次尝试...")
-            j += 1
-            # 刷新
-            sep = random.randint(0, 3)
-            logger.info(f"等待{sep}秒后刷新")
-            page.refresh()
-            time.sleep(sep)
-
-            try:
-                info = page.ele('xpath://*[@id="app"]/div[1]/div/div/div/div[2]/div[2]/div')
-                logger.info(f"页面提示\t{info.text}")
-            except Exception as e:
-                logger.error(e)
-                logger.error("”提示元素“未找到")
-                continue
-
-            if info.text == "已达到用户并发数上限":
-                break
-            elif page.url == "http://10-17-27-11.newvpn.sdut.edu.cn:8118/#/login?redirect=%2F":
-                logger.info("登录成功")
-                return True, page
-
-            print(page.url)
-            logger.info("新的转机...")
-            break
-
+        # 刷新
+        sep = random.randint(0, 3)
+        logger.info(f"等待{sep}秒后刷新")
+        time.sleep(sep)
     return True, page
 
-# TODO 配置
-def start_browser(chromedriver_path):
-    options = {
-        'headless': False,  # 无头模式，不显示浏览器界面
-        'disable_gpu': True,
-        'no_sandbox': True,
-        'disable_dev_shm_usage': True
-    }
-    try:
-        page = ChromiumPage(chromedriver_path, options=options)
-        page.timeout = 10
-        return page
-    except Exception as e:
-        logger.error(f"ChromeDriver版本不匹配: {e}")
-        logger.info("查看:")
-        logger.info("https://googlechromelabs.github.io/chrome-for-testing/#stable")
-        sys.exit(1)
 
 
 def logout(page):
@@ -130,5 +103,42 @@ def logout(page):
     print(page.cookies)
 
 
-if __name__ == '__main__':
-    auth_sdut()
+def check_login_page(page):
+    try:
+        # 尝试获取特定的输入框元素
+        input_element = page.ele('css:input.van-field__control[placeholder="学生为学号,教师为工号"]')
+        if input_element:
+            logger.info("找到了学生为学号,教师为工号的输入框，确认已在登录页。")
+            return True
+    except Exception as e:
+        logger.info(f"未能找到特定输入框: {e}")
+    logger.info("未能确认是否在登录页。")
+    return False
+
+
+def have_login(page):
+    # 检查通知情况
+    msg = page.ele('css:button.van-button.van-button--default.van-button--large.van-dialog__confirm')
+    if msg:
+        time.sleep(1)
+        msg.click()
+        return True
+    sp_ele = page.ele(
+        'css:#app > div:nth-child(1) > div.van-hairline--top-bottom.van-tabbar.van-tabbar--fixed > div.van-tabbar-item.van-tabbar-item--active > div.van-tabbar-item__text')
+    if sp_ele not in [None, ''] and sp_ele.text == '首页':
+        return True
+    return False
+
+
+def deal_notice(page):
+    # page.listen.start(CONSTRANTS.NOTICE_URL)
+    # page.refresh()
+    # res = page.listen.wait()
+    # notices = res.response.body
+    # print(notices)
+    # for notice in notices['result']['result']:
+    #     logger.info(notice)
+    notices_ele = page.eles('xpath://*[@id="app"]/div[@class="announcement"]/div[@class="main"]/div/div/*')
+    for ele in notices_ele:
+        notice = ele.click()
+        page.back()
