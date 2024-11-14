@@ -350,4 +350,4 @@ def outer_ap_while(page):
     while not outer_ap_dev(page):
         time.sleep(random.randint(1, 3))
 
-appointment(login())
+
