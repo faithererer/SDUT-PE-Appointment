@@ -70,7 +70,7 @@ def appointment(page):
     else:
         logger.error("未找到对应的策略")
         return False
-    logger.info("预约结束,成功预约")
+    logger.info("预约流程结束")
 
 
 def outer_ap(page):
@@ -232,7 +232,8 @@ def inner_ap_dev(page):
                 time_period.click(by_js=True)
                 list = page.listen.wait()
                 auth = list.request.headers['Authorization']
-                check_and_book(list.response.body, page, auth)
+                if check_and_book(list.response.body, page, auth):
+                    return True
     except ContextLostError as e:
         logger.error(f"上下文丢失: {str(e)}")
         return False
@@ -335,6 +336,9 @@ def check_and_book(json_data, page, auth):
                         return True
                     else:
                         logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）, {num_apply}/{num_max}失败: {msg}")
+                        if "距离上次预约时间未超" in msg:
+                            logger.error("距离上次预约时间过短，无法预约, 该方式预约流程无法继续进行")
+                            return True
                 except Exception as e:
                     logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）, {num_apply}/{num_max}时出错: {str(e)}")
             else:
