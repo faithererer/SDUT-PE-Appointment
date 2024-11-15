@@ -7,7 +7,7 @@
 - [x] 多种预约模式
 - [x] 支持浏览器模拟点击
 - [x] 支持接口直发
-## 使用简介
+### 使用简介
 填写[`options.config`](./options.config)文件，运行[main.py](./main.py)即可
 
 ### 支持的浏览器
