@@ -32,7 +32,12 @@ def auth_sdut():
         except TimeoutError as e:
             logger.warning("您的网络可能有问题.., 请检查网络连接")
             continue
-
+        if check_login_page(page):
+            logger.info("当前在登录页")
+            return 1, page
+        if have_login(page):
+            logger.info("登录成功,当前登录态")
+            return 2, page
         # 获得体测系统的用户名和密码输入框
         try:
             username_ipt = page.ele('#username')
@@ -143,3 +148,11 @@ def deal_notice(page):
     #     notice = ele.click()
     #     page.back()
     pass
+
+
+def get_sdp_user_token(bs):
+    for coo in bs.cookies():
+        if coo['domain'] == '.newvpn.sdut.edu.cn' and coo['name'] == 'sdp_user_token' \
+                and coo['value'] not in ['', None]:
+            return coo['value']
+    return None

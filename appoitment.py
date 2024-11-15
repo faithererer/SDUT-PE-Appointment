@@ -2,16 +2,19 @@ import json
 import random
 import threading
 import time
-
+from use_api import *
+import requests
 from DrissionPage._functions.keys import Keys
 from DrissionPage.errors import ContextLostError
 
+import AppoiintmentType
 import CONSTRANTS
 from Chrome import Chrome
 from auth_sdut import deal_notice
 import config_reader
 import my_logger
 from auth_sdut import auth_sdut
+from use_api import check_sorry
 
 logger = my_logger.MYLogger().logger
 
@@ -239,6 +242,7 @@ def inner_ap_dev(page):
         return False
     return False
 
+
 def outer_ap_dev(page):
     logger.warning("进行室外预约..")
     page.get(CONSTRANTS.OUTER_URL)
@@ -259,12 +263,14 @@ def outer_ap_dev(page):
 
         time_periods = page.eles('css:#app > div.page > div:nth-child(3) > div:nth-child(2) > div > *')
         for time_period in time_periods:
+            print(time_period.html)
             page.listen.start(CONSTRANTS.AP_LIST)
             time_period.click(by_js=True)
             list = page.listen.wait()
             auth = list.request.headers['Authorization']
             check_and_book(list.response.body, page, auth)
     return False
+
 
 def send_ap(id, page, authorization):
     try:
@@ -332,7 +338,8 @@ def check_and_book(json_data, page, auth):
                     # 调用假设已经封装好的app函数进行预约，传入对应id（这里假设每个预约信息里有'id'字段）
                     stat, msg, page = send_ap(item["id"], page, auth)
                     if stat:
-                        logger.info(f"成功预约 {date_start} 的时段，预约ID为 {item['id']}, {num_apply}/{num_max}, 返回信息: {msg}")
+                        logger.info(
+                            f"成功预约 {date_start} 的时段，预约ID为 {item['id']}, {num_apply}/{num_max}, 返回信息: {msg}")
                         return True
                     else:
                         logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）, {num_apply}/{num_max}失败: {msg}")
@@ -342,16 +349,82 @@ def check_and_book(json_data, page, auth):
                 except Exception as e:
                     logger.error(f"预约 {date_start} 的时段（ID: {item['id']}）, {num_apply}/{num_max}时出错: {str(e)}")
             else:
-                logger.info(f"{date_start} 的时段已满，无法预约，预约ID为 {item['id']}, 返回信息: 未发请求, {num_apply}/{num_max}")
+                logger.info(
+                    f"{date_start} 的时段已满，无法预约，预约ID为 {item['id']}, 返回信息: 未发请求, {num_apply}/{num_max}")
     except json.JSONDecodeError as e:
         logger.error(f"JSON解析出错: {str(e)}")
+
 
 def inner_ap_while(page):
     while not inner_ap_dev(page):
         time.sleep(random.randint(1, 3))
+
 
 def outer_ap_while(page):
     while not outer_ap_dev(page):
         time.sleep(random.randint(1, 3))
 
 
+# 获得可预约日期
+def get_date_list(session, headers, a_type):
+    res = session.post(CONSTRANTS.APP_DATE_LIST, headers=headers,
+                       json={"taskId": 4, "campusId": 1, "type": a_type.value}
+                       )
+    print("结果:"+res.text)
+    if res.status_code != 200:
+        logger.error(f"获取日期列表失败: {res.text}")
+        check_sorry(res.text, headers, Chrome().get_browser(), session)
+        return None
+    check_sorry(res.text, headers, Chrome().get_browser(), session)
+    print(json.loads(res.text)["result"])
+    return list(json.loads(res.text)["result"])
+
+
+# def get_time_period(session, headers, date, type):
+#     try:
+#         res = session.get(CONSTRANTS.APP_TIME_PERIOD, headers=headers,
+#                           json={"taskId": 4, "campusId": 1, "theDate": date, "type": type}
+#                           )
+#         if res.status_code != 200:
+#             logger.error(f"获取时间段失败: {res.text}")
+#             return None
+#         return json.loads(res.text["result"])
+#     except Exception as e:
+#         logger.error(f"获取时间段时出错: {str(e)}")
+#         return None
+
+
+# 获得日期详细预约信息
+def get_app_list_oneday(session, headers, date, a_type):
+    try:
+        res = []
+        for i in range(1, 4):
+            one_res = session.post(CONSTRANTS.APP_LIST, headers=headers,
+                               json={"taskId": 4, "campusId": 1, "theDate": date['date'], "type": a_type.value, "timeType": i}
+                               )
+            if one_res.status_code != 200:
+                logger.error(f"获取预约列表失败: {one_res.text}")
+                check_sorry(one_res.text, headers, Chrome().get_browser(), session)
+                return None
+            one_res = json.loads(one_res.text)["result"]
+            res += one_res
+        return res
+    except Exception as e:
+        logger.error(f"获取预约列表时出错: {str(e)}")
+        return None
+
+
+def apply(session, headers, id):
+    global res
+    try:
+        res = session.post(CONSTRANTS.AP_APPLY, headers=headers,
+                           json={"appointmentId": [id]}
+                           )
+        if res.status_code != 200:
+            logger.warning(f"预约失败: {res.text}")
+            check_sorry(res.text, headers, Chrome().get_browser(), session)
+            return None
+        return json.loads(res.text)
+    except Exception as e:
+        logger.error(f"预约时出错: {str(e)}")
+        return None
