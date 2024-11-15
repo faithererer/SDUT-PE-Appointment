@@ -24,5 +24,5 @@
 
 ## 关于接口直发模式
 - 打开浏览器，进入登录界面(非认证界面)，F12打开控制台，打开network(网络)抓取数据包
-- 输入账号，密码 点击登录，查看/api/sys/user/bind/wechat接口的payload数据
-- 找到name字段， 为加密的密码
+- 输入账号，密码 点击登录，查看`/api/sys/user/bind/wechat`接口的payload数据
+- 找到`name`字段， 为加密的密码
