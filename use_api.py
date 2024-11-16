@@ -13,6 +13,7 @@ import requests
 
 from auth_sdut import logger, auth_sdut, deal_notice, get_sdp_user_token
 
+
 def check_sorry(str, headers, bs, session):
     if str in 'Sorry':
         if get_sdp_user_token(bs) not in ['', None]:
@@ -35,13 +36,16 @@ def check_sorry(str, headers, bs, session):
             login_json = json.loads(login_res.text)
         except Exception as e:
             logger.error(f"登录信息不是正常信息:{login_res.text}")
-            check_sorry(login_res.text, headers)
+            check_sorry(login_res.text, headers, Chrome().get_browser(), session)
+            print(headers)
         if login_json['status'] != 1:
             logger.error(f"登录失败:{login_json['message']}")
         token = login_json["result"]["token"]
         logger.info("登录成功, token:" + token)
         headers['Authorization'] = f'{token}'
         return True
+
+
 def logined(coo_list):
     i = 0
     for coo in coo_list:
@@ -66,9 +70,9 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
         if m_th is True and lock is not None:
             # 加锁，只允许一个线程执行，不自旋
             with lock:
-                check_sorry("Sorry", headers, bs, session)
+                while not check_sorry("Sorry", headers, bs, session): pass
         else:
-            check_sorry("Sorry", headers, bs, session)
+            while not check_sorry("Sorry", headers, bs, session): pass
 
         logger.warning("开始预约，当前预约类型:" + app_type.name)
         while True:
@@ -80,7 +84,8 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
                 from appoitment import get_app_list_oneday
                 app_list = get_app_list_oneday(session, headers, dt, app_type)
                 for app in app_list:
-                    logger.info(f"【{app_type.name}】预约时间段:{app['dateStart']}-{app['dateEnd']}\t人数:{app['numApply']}/{app['numMax']}")
+                    logger.info(
+                        f"【{app_type.name}】预约时间段:{app['dateStart']}-{app['dateEnd']}\t人数:{app['numApply']}/{app['numMax']}")
                     if app['dateStart'] not in ['', None]:
                         if app['numApply'] >= app['numMax']:
                             logger.info(f"人数已满")

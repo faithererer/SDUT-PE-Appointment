@@ -151,8 +151,19 @@ def deal_notice(page):
 
 
 def get_sdp_user_token(bs):
-    for coo in bs.cookies():
+    for coo in bs.cookies(all_info=True):
         if coo['domain'] == '.newvpn.sdut.edu.cn' and coo['name'] == 'sdp_user_token' \
                 and coo['value'] not in ['', None]:
-            return coo['value']
+            # 判断是否过期
+            if coo['expires'] == -1:
+                # 是会话cookie，认为当前会话内有效，返回其值
+                return coo['value']
+            else:
+                current_time = time.time()
+                if current_time > coo['expires']:
+                    # 已过期，返回None
+                    return None
+                else:
+                    # 未过期，返回其值
+                    return coo['value']
     return None
