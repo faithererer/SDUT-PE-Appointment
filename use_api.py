@@ -5,12 +5,12 @@ import time
 
 import CONSTRANTS
 import config_reader
+import gbl
 import my_logger
 from Chrome import Chrome
 from appoitment import *
 from art import *
 import requests
-
 from auth_sdut import logger, auth_sdut, deal_notice, get_sdp_user_token
 
 
@@ -23,6 +23,9 @@ def check_sorry(str, headers, bs, session):
         sdp_user_token = get_sdp_user_token(bs)
         if sdp_user_token is not None:
             logger.info(f"sdp_user_token:\t{sdp_user_token}")
+        else:
+            logger.error("sdp_user_token为空.获取失败")
+            return False
         opts = config_reader.load_config()
         username = opts.get('DEFAULT', 'username')
         password = opts.get('DEFAULT', 'password_encoded')
@@ -64,6 +67,7 @@ def logined(coo_list):
 def appointment_by_api(app_type, session, m_th=None, lock=None):
     bs = Chrome().get_browser()
     bs.new_tab("http://10-17-27-11.newvpn.sdut.edu.cn:8118/")
+    bs.set.cookies.clear()
     logger.info("正在认证...")
     while True:
         headers = CONSTRANTS.headers
@@ -94,9 +98,11 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
                         logger.info(apply_res)
                         if apply_res['status'] == 1:
                             logger.info(f"预约成功")
+                            gbl.result[app_type] = True
                             return True
                         elif apply_res['status'] == -1 and apply_res['message'] in '距离上次预约时间未超':
                             logger.error(f"预约失败:{apply_res['message']}")
+                            gbl.result[app_type] = False
                             return False
                         else:
                             logger.error(f"预约失败:{apply_res['message']}")

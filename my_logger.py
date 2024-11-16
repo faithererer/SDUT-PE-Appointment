@@ -1,7 +1,9 @@
 import logging
+import os
+from datetime import datetime
+
 import colorlog
 import threading  # 导入 threading 模块，方便后续获取线程相关信息
-
 
 class MYLogger:
     _instance = None
@@ -15,13 +17,21 @@ class MYLogger:
     def _init_logger(self):
         # 创建 logger 对象
         self.logger = logging.getLogger(__name__)
-        # 配置日志记录器的级别
         self.logger.setLevel(logging.INFO)  # 确保日志记录器的级别为 INFO 或更低
 
-        # 创建 handler
+        # 创建控制台日志处理器
         self.ch = logging.StreamHandler()
+        self.ch.setLevel(logging.INFO)
 
-        # 创建带颜色的格式化字符串，添加线程相关信息显示，这里使用 %(threadName)s 显示线程名称，也可以使用 %(thread)d 显示线程 ID
+        # 创建文件日志处理器
+        log_dir = "./logs"
+        log_file = f"app_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        self.fh = logging.FileHandler(os.path.join(log_dir, log_file), encoding="utf-8")
+        self.fh.setLevel(logging.INFO)
+
+        # 创建带颜色的格式化字符串
         self.formatter = colorlog.ColoredFormatter(
             "%(log_color)s%(levelname)-8s%(reset)s %(green)s%(asctime)s %(reset)s%(light_blue)s%(threadName)s: %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
@@ -33,21 +43,28 @@ class MYLogger:
                 'ERROR': 'red',
                 'CRITICAL': 'red,bg_white',
             },
-            secondary_log_colors={},
             style='%'
         )
 
-        # 为 handler 设置 formatter
-        self.ch.setFormatter(self.formatter)
+        # 创建文件日志格式化器（无颜色）
+        self.file_formatter = logging.Formatter(
+            "%(levelname)-8s %(asctime)s %(threadName)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
 
-        # 将 handler 添加到 logger 中
+        # 设置格式化器
+        self.ch.setFormatter(self.formatter)
+        self.fh.setFormatter(self.file_formatter)
+
+        # 将处理器添加到 logger 中
         self.logger.addHandler(self.ch)
+        self.logger.addHandler(self.fh)
 
 
 def get_logger():
     return MYLogger().logger
 
-# 以下是测试代码示例，用于展示添加线程信息后的日志打印效果
+# 测试代码
 def test_function():
     logger = get_logger()
     logger.info("这是在测试函数里的日志信息")
