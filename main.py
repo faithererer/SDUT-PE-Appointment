@@ -22,8 +22,12 @@ if __name__ == '__main__':
                 appointment_by_api(AppointmentType.OUTER, requests.session())
             elif config_reader.get_policy() == "3":
                 lock = threading.Lock()
-                threading.Thread(target=appointment_by_api, args=(AppointmentType.INNER, requests.session(), True, lock)).start()
-                threading.Thread(target=appointment_by_api, args=(AppointmentType.OUTER, requests.session(), True, lock)).start()
+                t1 = threading.Thread(target=appointment_by_api, args=(AppointmentType.INNER, requests.session(), True, lock))
+                t2 = threading.Thread(target=appointment_by_api, args=(AppointmentType.OUTER, requests.session(), True, lock))
+                t1.start()
+                t2.start()
+                t1.join()
+                t2.join()
             else:
                 my_logger.get_logger().error("policy配置错误")
         else:
