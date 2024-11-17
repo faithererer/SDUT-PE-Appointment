@@ -29,9 +29,9 @@ if __name__ == '__main__':
             elif config_reader.get_policy() == "3":
                 lock = threading.Lock()
                 t1 = threading.Thread(target=appointment_by_api,
-                                      args=(AppointmentType.INNER, requests.session(), True, lock))
+                                      args=(AppointmentType.INNER, requests.session(), True, lock), daemon=True)
                 t2 = threading.Thread(target=appointment_by_api,
-                                      args=(AppointmentType.OUTER, requests.session(), True, lock))
+                                      args=(AppointmentType.OUTER, requests.session(), True, lock), daemon=True)
                 t1.start()
                 t2.start()
                 try:
