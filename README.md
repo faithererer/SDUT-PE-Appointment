@@ -16,8 +16,7 @@
 - [x] 支持浏览器模拟点击
 - [x] 支持接口直发
 ### 使用简介
-填写[`options.config`](./options.config)文件，运行[main.py](./main.py)即可，或者使用[exc.bat](./exc.bat)批处理文件
-```shell
+填写[`options.config`](./options.config)文件，运行[main.py](./main.py)即可，或者使用[exc.bat]()
 
 ### 支持的浏览器
 | 浏览器 | 版本  | 下载链接 |
