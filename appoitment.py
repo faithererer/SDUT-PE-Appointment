@@ -373,7 +373,7 @@ def get_date_list(session, headers, a_type):
     print(f"【{a_type.name}】:"+res.text)
     if res.status_code != 200:
         logger.error(f"获取日期列表失败: {res.text}")
-        check_sorry(res.text, headers, Chrome().get_browser(), session)
+        while not check_sorry(res.text, headers, Chrome().get_browser(), session): pass
         return None
     check_sorry(res.text, headers, Chrome().get_browser(), session)
     print(json.loads(res.text)["result"])

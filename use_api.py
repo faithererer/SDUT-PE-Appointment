@@ -1,3 +1,5 @@
+from random import random
+
 import AppoiintmentType
 import json
 import threading
@@ -14,8 +16,8 @@ import requests
 from auth_sdut import logger, auth_sdut, deal_notice, get_sdp_user_token
 
 
-def check_sorry(str, headers, bs, session):
-    if str in 'Sorry':
+def check_sorry(s, headers, bs, session):
+    if 'Sorry' in s:
         if get_sdp_user_token(bs) not in ['', None]:
             logger.info("已认证")
         else:
@@ -41,6 +43,7 @@ def check_sorry(str, headers, bs, session):
             logger.error(f"登录信息不是正常信息:{login_res.text}")
             check_sorry(login_res.text, headers, Chrome().get_browser(), session)
             print(headers)
+            return False
         if login_json['status'] != 1:
             logger.error(f"登录失败:{login_json['message']}")
         token = login_json["result"]["token"]
@@ -83,7 +86,12 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
             logger.info("可用日期")
             from appoitment import get_date_list
             date_list = get_date_list(session, headers, app_type)
-            for dt in date_list:
+            if date_list is None or len(date_list) == 0:
+                t = random.randint(3, 5)
+                logger.warning(f"当前没有预约信息, {t}秒后重试")
+                time.sleep(t)
+                continue
+            for dt in date_list[::-1]:
                 logger.info(f"【{app_type.name}】:{dt}")
                 from appoitment import get_app_list_oneday
                 app_list = get_app_list_oneday(session, headers, dt, app_type)
@@ -93,6 +101,9 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
                     if app['dateStart'] not in ['', None]:
                         if app['numApply'] >= app['numMax']:
                             logger.info(f"人数已满")
+                            continue
+                        elif "08:00" in app['dateStart']:
+                            logger.warning("虽然有空位，但是08:00-09:00太早了，跳过")
                             continue
                         from appoitment import apply
                         apply_res = apply(session, headers, app['id'])
@@ -109,4 +120,4 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
                             logger.error(f"预约失败:{apply_res['message']}")
                     else:
                         logger.info(f"时间段不可用")
-            time.sleep(random.randint(1, 3))
+            time.sleep(random.randint(0, 2))
