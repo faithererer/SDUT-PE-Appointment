@@ -76,7 +76,7 @@ def auth_sdut():
         except Exception as e:
             logger.error(f"找不到或无法点击登录按钮: {e}")
             continue
-        logger.info("认证结果")
+        logger.info("正在认证...")
         # 是否登录
         if have_login(page):
             logger.info("登录成功,当前登录态")

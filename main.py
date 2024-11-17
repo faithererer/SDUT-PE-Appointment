@@ -53,3 +53,5 @@ if __name__ == '__main__':
         my_logger.MYLogger().logger.info("正在关闭浏览器...")
         Chrome().get_browser().quit()
         my_logger.MYLogger().logger.info("浏览器已经关闭")
+        # 任意键退出
+        input("按任意键退出")
