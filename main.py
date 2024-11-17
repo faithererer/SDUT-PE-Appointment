@@ -49,7 +49,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logger.info("程序被用户中断")
     finally:
-        logger.info("预约结果:室内:"+str(result[AppointmentType.INNER])+"室外:"+str(result[AppointmentType.OUTER]))
+        logger.critical("预约结果:室内:"+str(result[AppointmentType.INNER])+"室外:"+str(result[AppointmentType.OUTER]))
         my_logger.MYLogger().logger.info("正在关闭浏览器...")
         Chrome().get_browser().quit()
         my_logger.MYLogger().logger.info("浏览器已经关闭")

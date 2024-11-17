@@ -370,7 +370,7 @@ def get_date_list(session, headers, a_type):
     res = session.post(CONSTRANTS.APP_DATE_LIST, headers=headers,
                        json={"taskId": 4, "campusId": 1, "type": a_type.value}
                        )
-    print("结果:"+res.text)
+    print(f"【{a_type.name}】:"+res.text)
     if res.status_code != 200:
         logger.error(f"获取日期列表失败: {res.text}")
         check_sorry(res.text, headers, Chrome().get_browser(), session)

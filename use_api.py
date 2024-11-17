@@ -84,7 +84,7 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
             from appoitment import get_date_list
             date_list = get_date_list(session, headers, app_type)
             for dt in date_list:
-                logger.info(f"日期:{dt}")
+                logger.info(f"【{app_type.name}】:{dt}")
                 from appoitment import get_app_list_oneday
                 app_list = get_app_list_oneday(session, headers, dt, app_type)
                 for app in app_list:
@@ -94,14 +94,15 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
                         if app['numApply'] >= app['numMax']:
                             logger.info(f"人数已满")
                             continue
+                        from appoitment import apply
                         apply_res = apply(session, headers, app['id'])
                         logger.info(apply_res)
                         if apply_res['status'] == 1:
                             logger.info(f"预约成功")
                             gbl.result[app_type] = True
                             return True
-                        elif apply_res['status'] == -1 and apply_res['message'] in '距离上次预约时间未超':
-                            logger.error(f"预约失败:{apply_res['message']}")
+                        elif apply_res['status'] == -1 and '距离上次预约时间未超' in apply_res['message']:
+                            logger.error(f"预约失败:预约时间间隔过短:{apply_res['message']}")
                             gbl.result[app_type] = False
                             return False
                         else:
