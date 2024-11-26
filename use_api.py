@@ -18,6 +18,7 @@ from auth_sdut import logger, auth_sdut, deal_notice, get_sdp_user_token
 
 def check_sorry(s, headers, bs, session):
     if 'Sorry' in s:
+        """
         if get_sdp_user_token(bs) not in ['', None]:
             logger.info("已认证")
         else:
@@ -28,11 +29,12 @@ def check_sorry(s, headers, bs, session):
         else:
             logger.error("sdp_user_token为空.获取失败")
             return False
+        """
         opts = config_reader.load_config()
         username = opts.get('DEFAULT', 'username')
         password = opts.get('DEFAULT', 'password_encoded')
         logger.info(f"开始登录,你的账号:{username}\t密码(加密):{password}")
-        headers['Cookie'] = f'sdp_user_token={sdp_user_token}'
+        # headers['Cookie'] = f'sdp_user_token={sdp_user_token}'
         login_res = session.post(url=CONSTRANTS.AP_LOGIN,
                                  json={"number": username, "name": password},
                                  headers=CONSTRANTS.headers)
@@ -102,7 +104,7 @@ def appointment_by_api(app_type, session, m_th=None, lock=None):
                         if app['numApply'] >= app['numMax']:
                             logger.info(f"人数已满")
                             continue
-                        elif "08:00" in app['dateStart']:
+                        elif "08:00" in app['dateStart'] and config_reader.get_skip() == "1":
                             logger.warning("虽然有空位，但是08:00-09:00太早了，跳过")
                             continue
                         from appoitment import apply

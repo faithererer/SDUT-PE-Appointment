@@ -19,3 +19,9 @@ def get_policy():
     config = configparser.ConfigParser()
     config.read('options.config', encoding='utf-8')
     return config.get('DEFAULT', 'policy')
+
+def get_skip():
+    # 加载配置文件
+    config = configparser.ConfigParser()
+    config.read('options.config', encoding='utf-8')
+    return config.get('DEFAULT', 'skip')
