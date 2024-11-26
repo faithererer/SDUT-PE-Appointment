@@ -25,10 +25,10 @@
 
 ### 环境
 
-| 环境 | 版本  |
-|--------|-------|
-| <img src="https://pic.zjcspace.xyz/b/202411131920654.svg" alt="Chrome" width="32" height="32"> | 3.8 
-| <img src="https://pic.zjcspace.xyz/b/202411131925584.svg" alt="Chrome" width="32" height="32"> | $$\geq 10$$
+| 环境                                                                                                    | 版本  |
+|-------------------------------------------------------------------------------------------------------|-------|
+| <img src="https://pic.zjcspace.xyz/b/202411131920654.svg" alt="Chrome" width="32" height="32"> (开发环境) | 3.8 
+| <img src="https://pic.zjcspace.xyz/b/202411131925584.svg" alt="Chrome" width="32" height="32"> (开发环境) | $$\geq 10$$
 
 ## 关于接口直发模式
 - 打开浏览器，进入登录界面(非认证界面)，F12打开控制台，打开network(网络)抓取数据包
